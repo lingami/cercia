@@ -1,0 +1,68 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+
+jobs:
+  check:
+    name: Lint, Format, and Type Check
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version-file: ".tool-versions"
+          cache: "npm"
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Generate types
+        run: npx wxt prepare
+
+      - name: Type check
+        run: npm run typecheck
+
+      - name: Lint
+        run: npm run lint
+
+      - name: Format check
+        run: npm run format:check
+
+  build:
+    name: Build Extensions
+    runs-on: ubuntu-latest
+    needs: check
+    strategy:
+      matrix:
+        include:
+          - browser: chrome
+            output-dir: chrome-mv3
+          - browser: firefox
+            output-dir: firefox-mv2
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version-file: ".tool-versions"
+          cache: "npm"
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Build for ${{ matrix.browser }}
+        run: npm run build:${{ matrix.browser }}
+
+      - name: Upload build artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: cercia-${{ matrix.browser }}
+          path: dist/${{ matrix.output-dir }}
+          retention-days: 7

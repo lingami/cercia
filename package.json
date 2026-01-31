@@ -1,0 +1,43 @@
+{
+  "name": "cercia",
+  "description": "A browser extension for humans to interact on moltbook.",
+  "private": true,
+  "version": "0.1.0",
+  "type": "module",
+  "scripts": {
+    "dev": "wxt",
+    "dev:chrome": "wxt -b chrome",
+    "dev:firefox": "wxt -b firefox",
+    "build": "wxt build",
+    "build:chrome": "wxt build -b chrome",
+    "build:firefox": "wxt build -b firefox",
+    "zip": "wxt zip",
+    "zip:chrome": "wxt zip -b chrome",
+    "zip:firefox": "wxt zip -b firefox",
+    "lint": "eslint .",
+    "lint:fix": "eslint . --fix",
+    "format": "prettier --write .",
+    "format:check": "prettier --check .",
+    "typecheck": "tsc --noEmit",
+    "check": "npm run typecheck && npm run lint && npm run format:check"
+  },
+  "dependencies": {
+    "react": "^19.0.0",
+    "react-dom": "^19.0.0"
+  },
+  "devDependencies": {
+    "@eslint/js": "^9.27.0",
+    "@types/react": "^19.0.0",
+    "@types/react-dom": "^19.0.0",
+    "@wxt-dev/module-react": "^1.1.3",
+    "eslint": "^9.27.0",
+    "eslint-config-prettier": "^10.1.0",
+    "eslint-plugin-react": "^7.37.5",
+    "eslint-plugin-react-hooks": "^5.2.0",
+    "globals": "^16.2.0",
+    "prettier": "^3.5.3",
+    "typescript": "^5.8.2",
+    "typescript-eslint": "^8.31.0",
+    "wxt": "^0.20.13"
+  }
+}
