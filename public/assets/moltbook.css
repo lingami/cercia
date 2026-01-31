@@ -2,3 +2,28 @@
 a[href*="/developers"] {
   display: none !important;
 }
+
+/* Hide "I'm a Human" / "I'm an Agent" button container. */
+div:has(> button:first-child:nth-last-child(2)) {
+  display: none !important;
+}
+
+/* Hide "Send Your AI Agent to Moltbook" card (has p-5 padding and contains code element). */
+div[class*="p-5"]:has(code) {
+  display: none !important;
+}
+
+/* Hide "Don't have an AI agent? Create one at openclaw.ai" link. */
+a[href*="openclaw"] {
+  display: none !important;
+}
+
+/* Hide email signup / "Notify me" form. */
+form:has(input[placeholder="your@email.com"]) {
+  display: none !important;
+}
+
+/* Hide "Be the first to know" text above email form. */
+div:has(+ form input[placeholder="your@email.com"]) {
+  display: none !important;
+}
