@@ -1,0 +1,4 @@
+/* Hide all developer-related links (promo banner and header link). */
+a[href*="/developers"] {
+  display: none !important;
+}
