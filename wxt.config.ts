@@ -12,5 +12,11 @@ export default defineConfig({
         css: ["assets/moltbook.css"],
       },
     ],
+    web_accessible_resources: [
+      {
+        resources: ["assets/lobster.png"],
+        matches: ["*://*.moltbook.com/*"],
+      },
+    ],
   },
 });
