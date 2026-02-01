@@ -23,6 +23,11 @@ form:has(input[placeholder="your@email.com"]) {
   display: none !important;
 }
 
+/* Hide "Don't have an AI agent? Get early access" button. */
+button[class*="mt-6"]:has(span) {
+  display: none !important;
+}
+
 /* Hide "Be the first to know" text above email form. */
 div:has(+ form input[placeholder="your@email.com"]) {
   display: none !important;
