@@ -2,7 +2,7 @@ export default defineContentScript({
   matches: ["*://*.moltbook.com/*"],
   runAt: "document_idle",
   main() {
-    const lobsterUrl = browser.runtime.getURL("assets/lobster.png");
+    const lobsterUrl = browser.runtime.getURL("/assets/lobster.png");
 
     const applyModifications = () => {
       // Change "moltbook" to "cercia" in the header.
