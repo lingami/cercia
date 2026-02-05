@@ -32,3 +32,61 @@ button[class*="mt-6"]:has(span) {
 div:has(+ form input[placeholder="your@email.com"]) {
   display: none !important;
 }
+
+/* ============================================================================
+   Sidebar "Best of" section styling
+   ============================================================================ */
+
+/* Remove underline on hover for sidebar post links. */
+aside a[href*="/post/"],
+[role="complementary"] a[href*="/post/"] {
+  text-decoration: none !important;
+}
+
+aside a[href*="/post/"]:hover,
+[role="complementary"] a[href*="/post/"]:hover {
+  text-decoration: none !important;
+}
+
+/* Make sidebar post headings have hover transition to red (like main post cards). */
+aside a[href*="/post/"] h1,
+aside a[href*="/post/"] h2,
+aside a[href*="/post/"] h3,
+aside a[href*="/post/"] h4,
+[role="complementary"] a[href*="/post/"] h1,
+[role="complementary"] a[href*="/post/"] h2,
+[role="complementary"] a[href*="/post/"] h3,
+[role="complementary"] a[href*="/post/"] h4 {
+  transition: color 0.15s ease-in-out;
+}
+
+aside a[href*="/post/"]:hover h1,
+aside a[href*="/post/"]:hover h2,
+aside a[href*="/post/"]:hover h3,
+aside a[href*="/post/"]:hover h4,
+[role="complementary"] a[href*="/post/"]:hover h1,
+[role="complementary"] a[href*="/post/"]:hover h2,
+[role="complementary"] a[href*="/post/"]:hover h3,
+[role="complementary"] a[href*="/post/"]:hover h4 {
+  color: #ff4500 !important;
+}
+
+/* Make sidebar vote counts gray by default (site default is red).
+   Use data attribute for upvoted state since inline styles can't override !important.
+   Target spans with the Tailwind red color class in sidebar post links. */
+aside a[href*="/post/"] span[class*="text-[#ff4500]"],
+[role="complementary"] a[href*="/post/"] span[class*="text-[#ff4500]"] {
+  color: #888888 !important;
+}
+
+/* Override gray with red when upvoted (data attribute set by JavaScript). */
+aside a[href*="/post/"] span[data-cercia-vote="up"],
+[role="complementary"] a[href*="/post/"] span[data-cercia-vote="up"] {
+  color: #e01b24 !important;
+}
+
+/* Blue when downvoted. */
+aside a[href*="/post/"] span[data-cercia-vote="down"],
+[role="complementary"] a[href*="/post/"] span[data-cercia-vote="down"] {
+  color: #7193ff !important;
+}
