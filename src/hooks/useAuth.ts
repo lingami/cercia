@@ -16,6 +16,7 @@ interface StoredAuth {
   apiKey: string;
   claimUrl?: string;
   verificationCode?: string;
+  cachedAgent?: { name: string; isClaimed: boolean };
 }
 
 export interface AuthState {
@@ -45,84 +46,127 @@ export function useAuth(): AuthState & AuthActions {
     verificationCode: null,
   });
 
-  // Load saved credentials on mount.
+  // Load saved credentials on mount. Uses cached agent data to avoid a loading flash,
+  // then refreshes from the API in the background.
   useEffect(() => {
     const loadAuth = async () => {
+      let cached: { name: string; isClaimed: boolean } | undefined;
       try {
         const stored = await browser.storage.local.get(STORAGE_KEY);
         const data = stored[STORAGE_KEY] as StoredAuth | undefined;
 
-        if (data?.apiKey) {
-          // Validate the stored API key.
-          const result = await validateApiKey(data.apiKey);
+        if (!data?.apiKey) {
+          setState((prev) => ({ ...prev, isLoading: false }));
+          return;
+        }
 
-          if (result.success) {
-            // Claimed agent - normal login. Cache agent for navbar.
-            const cachedAgent = { name: result.data.name, isClaimed: result.data.isClaimed };
-            await browser.storage.local.set({
-              [STORAGE_KEY]: { ...data, cachedAgent },
-            });
-            setState({
-              isLoading: false,
-              isLoggedIn: true,
-              agent: result.data,
-              apiKey: data.apiKey,
-              claimUrl: data.claimUrl || null,
-              verificationCode: data.verificationCode || null,
-            });
-            return;
-          }
+        // If we have a cached agent, show it immediately to avoid a loading flash.
+        cached = data.cachedAgent;
+        if (cached) {
+          const partialAgent: AgentProfile = {
+            name: cached.name,
+            description: "",
+            karma: 0,
+            isClaimed: cached.isClaimed,
+            createdAt: "",
+          };
+          setState({
+            isLoading: false,
+            isLoggedIn: true,
+            agent: partialAgent,
+            apiKey: data.apiKey,
+            claimUrl: data.claimUrl || null,
+            verificationCode: data.verificationCode || null,
+          });
+        }
 
-          // Check if this is an unclaimed agent (either by unclaimed flag or error message).
-          const isUnclaimed =
-            ("unclaimed" in result && result.unclaimed) || result.error === "Agent not yet claimed";
-          if (isUnclaimed) {
-            // Get the claim URL from the result or stored data.
-            const claimUrl = ("unclaimed" in result ? result.claimUrl : null) || data.claimUrl;
+        // Validate the stored API key (refreshes profile in background if cached).
+        const result = await validateApiKey(data.apiKey);
 
-            if (claimUrl) {
-              // Extract the claim token and get full agent info including verification code.
-              const claimToken = extractClaimToken(claimUrl);
-              if (claimToken) {
-                const claimResult = await getClaimInfo(claimToken);
-                if (claimResult.success) {
-                  const { name, description, verification_code } = claimResult.data;
+        if (result.success) {
+          // Claimed agent - normal login. Update cache.
+          const cachedAgent = { name: result.data.name, isClaimed: result.data.isClaimed };
+          await browser.storage.local.set({
+            [STORAGE_KEY]: { ...data, cachedAgent },
+          });
+          setState({
+            isLoading: false,
+            isLoggedIn: true,
+            agent: result.data,
+            apiKey: data.apiKey,
+            claimUrl: data.claimUrl || null,
+            verificationCode: data.verificationCode || null,
+          });
+          return;
+        }
 
-                  // Update stored credentials with verification code if we didn't have it.
-                  if (!data.verificationCode) {
-                    await browser.storage.local.set({
-                      [STORAGE_KEY]: { ...data, verificationCode: verification_code },
-                    });
-                  }
+        // Check if this is an unclaimed agent (either by unclaimed flag or error message).
+        const isUnclaimed =
+          ("unclaimed" in result && result.unclaimed) || result.error === "Agent not yet claimed";
+        if (isUnclaimed) {
+          // Get the claim URL from the result or stored data.
+          const claimUrl = ("unclaimed" in result ? result.claimUrl : null) || data.claimUrl;
 
-                  // Create a partial agent profile for the unclaimed state.
-                  const partialAgent: AgentProfile = {
-                    name,
-                    description: description || "",
-                    karma: 0,
-                    isClaimed: false,
-                    createdAt: new Date().toISOString(),
-                  };
+          if (claimUrl) {
+            // Extract the claim token and get full agent info including verification code.
+            const claimToken = extractClaimToken(claimUrl);
+            if (claimToken) {
+              const claimResult = await getClaimInfo(claimToken);
+              if (claimResult.success) {
+                const { name, description, verification_code } = claimResult.data;
 
-                  setState({
-                    isLoading: false,
-                    isLoggedIn: true,
-                    agent: partialAgent,
-                    apiKey: data.apiKey,
-                    claimUrl,
-                    verificationCode: data.verificationCode || verification_code,
+                // Update stored credentials with verification code if we didn't have it.
+                if (!data.verificationCode) {
+                  await browser.storage.local.set({
+                    [STORAGE_KEY]: { ...data, verificationCode: verification_code },
                   });
-                  return;
                 }
+
+                // Create a partial agent profile for the unclaimed state.
+                const partialAgent: AgentProfile = {
+                  name,
+                  description: description || "",
+                  karma: 0,
+                  isClaimed: false,
+                  createdAt: new Date().toISOString(),
+                };
+
+                setState({
+                  isLoading: false,
+                  isLoggedIn: true,
+                  agent: partialAgent,
+                  apiKey: data.apiKey,
+                  claimUrl,
+                  verificationCode: data.verificationCode || verification_code,
+                });
+                return;
               }
             }
           }
         }
-      } catch (error) {
-        console.error("Failed to load auth:", error);
-      }
 
-      setState((prev) => ({ ...prev, isLoading: false }));
+        // If validation failed and the key is not unclaimed, it is invalid.
+        // Log the user out so they don't stay in a stale cached state.
+        if (cached) {
+          await browser.storage.local.remove(STORAGE_KEY);
+          setState({
+            isLoading: false,
+            isLoggedIn: false,
+            agent: null,
+            apiKey: null,
+            claimUrl: null,
+            verificationCode: null,
+          });
+        } else {
+          setState((prev) => ({ ...prev, isLoading: false }));
+        }
+      } catch (error) {
+        // On network errors, keep the cached state if available (backend may be down).
+        console.error("Failed to load auth:", error);
+        if (!cached) {
+          setState((prev) => ({ ...prev, isLoading: false }));
+        }
+      }
     };
 
     loadAuth();

@@ -19,7 +19,7 @@ export default defineConfig({
     ],
     web_accessible_resources: [
       {
-        resources: ["assets/lobster.png"],
+        resources: ["assets/lobster.png", "interceptor.js"],
         matches: ["*://*.moltbook.com/*"],
       },
     ],

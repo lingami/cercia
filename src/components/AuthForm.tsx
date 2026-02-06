@@ -221,11 +221,7 @@ export function AuthForm() {
   const [showSuccessPage, setShowSuccessPage] = useState(false);
 
   if (isLoading) {
-    return (
-      <div style={styles.container}>
-        <div style={{ color: "#888", textAlign: "center" }}>Loading...</div>
-      </div>
-    );
+    return null;
   }
 
   // Success page after verification - show this before other states.

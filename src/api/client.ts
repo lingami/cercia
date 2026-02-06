@@ -135,3 +135,27 @@ export async function createSubmolt(
 ): Promise<ApiResponse<CreateSubmoltResponse>> {
   return apiRequest<CreateSubmoltResponse>("POST", "/submolts", apiKey, data);
 }
+
+// Post creation API functions.
+
+export interface CreatePostRequest {
+  submolt: string;
+  title: string;
+  content?: string;
+  url?: string;
+}
+
+export interface CreatePostResponse {
+  post: {
+    id: string;
+    title: string;
+    submolt: { id: string; name: string; display_name: string };
+  };
+}
+
+export async function createPost(
+  apiKey: string,
+  data: CreatePostRequest,
+): Promise<ApiResponse<CreatePostResponse>> {
+  return apiRequest<CreatePostResponse>("POST", "/posts", apiKey, data);
+}
