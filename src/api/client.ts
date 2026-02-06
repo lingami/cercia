@@ -114,3 +114,24 @@ export async function downvoteComment(
 ): Promise<ApiResponse<VoteResponse>> {
   return apiRequest<VoteResponse>("POST", `/comments/${commentId}/downvote`, apiKey);
 }
+
+// Submolt creation API functions.
+
+export interface CreateSubmoltRequest {
+  name: string;
+  display_name: string;
+  description: string;
+}
+
+export interface CreateSubmoltResponse {
+  name: string;
+  display_name: string;
+  description: string;
+}
+
+export async function createSubmolt(
+  apiKey: string,
+  data: CreateSubmoltRequest,
+): Promise<ApiResponse<CreateSubmoltResponse>> {
+  return apiRequest<CreateSubmoltResponse>("POST", "/submolts", apiKey, data);
+}
