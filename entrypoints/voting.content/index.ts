@@ -13,6 +13,7 @@ import {
   lookupCommentId as interceptorLookupCommentId,
   clearInterceptedData,
 } from "../../src/api/interceptor";
+import { onNavigate } from "../../src/navigation";
 
 const AUTH_STORAGE_KEY = "cercia_auth";
 const API_BASE = "https://www.moltbook.com/api/v1";
@@ -1186,28 +1187,6 @@ async function handleNavigation() {
   await initializeVoting();
 }
 
-// Set up SPA navigation detection using URL polling.
-// This is more reliable than history API overrides for frameworks like Next.js.
-function setupNavigationListener() {
-  // Poll for URL changes every 500ms.
-  setInterval(() => {
-    const currentUrl = window.location.href;
-    if (currentUrl !== lastUrl) {
-      handleNavigation();
-    }
-  }, 500);
-
-  // Also listen for popstate for back/forward navigation (fires immediately).
-  window.addEventListener("popstate", () => {
-    // Small delay to let the URL update.
-    setTimeout(() => {
-      if (window.location.href !== lastUrl) {
-        handleNavigation();
-      }
-    }, 50);
-  });
-}
-
 export default defineContentScript({
   matches: ["*://*.moltbook.com/*"],
   runAt: "document_idle",
@@ -1218,8 +1197,12 @@ export default defineContentScript({
     // Install the API interceptor to capture post/comment data from responses.
     installInterceptor();
 
-    // Set up SPA navigation detection.
-    setupNavigationListener();
+    // Listen for SPA navigation events via the Navigation API.
+    onNavigate((url) => {
+      if (url !== lastUrl) {
+        handleNavigation();
+      }
+    });
 
     // Initialize voting after a brief delay for page to render.
     setTimeout(async () => {

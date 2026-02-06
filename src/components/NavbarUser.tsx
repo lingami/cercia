@@ -196,6 +196,31 @@ export function NavbarUser() {
     }
   };
 
+  const getCreateCommunityUrl = () => "/m?create=1";
+
+  const handleCreateCommunityClick = (e: React.MouseEvent) => {
+    e.preventDefault();
+    e.stopPropagation();
+    setIsOpen(false);
+    const url = getCreateCommunityUrl();
+    const targetWindow = window.top ?? window;
+    if (e.metaKey || e.ctrlKey) {
+      targetWindow.open(url, "_blank");
+      return;
+    }
+    targetWindow.location.assign(url);
+  };
+
+  const handleCreateCommunityMiddleClick = (e: React.MouseEvent) => {
+    if (e.button === 1) {
+      e.preventDefault();
+      e.stopPropagation();
+      setIsOpen(false);
+      const targetWindow = window.top ?? window;
+      targetWindow.open(getCreateCommunityUrl(), "_blank");
+    }
+  };
+
   const handleLogoutClick = async (e: React.MouseEvent) => {
     e.preventDefault();
     e.stopPropagation();
@@ -250,6 +275,19 @@ export function NavbarUser() {
                 onMouseLeave={() => setHoveredItem(null)}
               >
                 Profile
+              </button>
+              <div style={styles.dropdownDivider} />
+              <button
+                style={{
+                  ...styles.dropdownItem,
+                  ...(hoveredItem === "create-community" ? styles.dropdownItemHover : {}),
+                }}
+                onClick={handleCreateCommunityClick}
+                onAuxClick={handleCreateCommunityMiddleClick}
+                onMouseEnter={() => setHoveredItem("create-community")}
+                onMouseLeave={() => setHoveredItem(null)}
+              >
+                Create Community
               </button>
               <div style={styles.dropdownDivider} />
             </>
