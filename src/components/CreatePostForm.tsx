@@ -1,8 +1,9 @@
 // Form component for creating posts on Moltbook submolts.
 
 import { useState } from "react";
-import { createPost } from "../api/client";
+import { createPost, upvotePost } from "../api/client";
 import { addCreatedPost } from "../storage/posts";
+import { setVote } from "../storage/votes";
 
 const STORAGE_KEY = "cercia_auth";
 const TITLE_MAX = 300;
@@ -189,6 +190,10 @@ export function CreatePostForm({ submoltName, onSuccess }: CreatePostFormProps) 
           submolt: post.submolt.name,
           createdAt: new Date().toISOString(),
         });
+        // Auto-upvote the new post and persist the vote state locally.
+        // Await `setVote` since `onSuccess` navigates to the post page.
+        upvotePost(apiKey, post.id).catch(() => {});
+        await setVote("post", post.id, "up");
         onSuccess?.(post.id);
       } else {
         setError(result.error || "Failed to create post.");
