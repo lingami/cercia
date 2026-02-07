@@ -1,6 +1,8 @@
 // API response interception utilities.
 // Captures Moltbook API responses to extract post/comment IDs and metadata.
 
+import { makeCommentLookupKey } from "./comment-lookup";
+
 export interface InterceptedPost {
   id: string;
   title: string;
@@ -33,19 +35,6 @@ const interceptedData: ApiInterceptData = {
   comments: new Map(),
   commentLookup: new Map(),
 };
-
-// Normalize content for matching DOM text to API content.
-function normalizeContent(s: string): string {
-  return s
-    .toLowerCase()
-    .replace(/[^a-z0-9]/g, "")
-    .slice(0, 40);
-}
-
-// Create a lookup key from author name and content snippet.
-function makeCommentLookupKey(authorName: string, contentSnippet: string): string {
-  return `${authorName.toLowerCase()}:${normalizeContent(contentSnippet)}`;
-}
 
 // Process a post object from API response.
 function processPost(post: Record<string, unknown>, submolt?: string): void {

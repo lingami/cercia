@@ -13,10 +13,14 @@ import {
   lookupCommentId as interceptorLookupCommentId,
   clearInterceptedData,
 } from "../../src/api/interceptor";
+import {
+  fetchCommentLookupMap,
+  lookupCommentId as cacheLookupCommentId,
+  clearCommentLookupCache,
+} from "../../src/api/comment-lookup";
 import { onNavigate } from "../../src/navigation";
 
 const AUTH_STORAGE_KEY = "cercia_auth";
-const API_BASE = "https://www.moltbook.com/api/v1";
 
 // Colors for vote states.
 const COLORS = {
@@ -45,15 +49,6 @@ interface CommentVoteElements {
   upvoteArrow: HTMLElement;
   voteCount: HTMLElement;
   downvoteArrow: HTMLElement;
-}
-
-interface ApiComment {
-  id: string;
-  content: string;
-  author: { name: string };
-  upvotes: number;
-  downvotes: number;
-  replies?: ApiComment[];
 }
 
 async function getApiKey(): Promise<string | null> {
@@ -590,71 +585,7 @@ function makePostDetailVotesInteractive(apiKey: string): VoteElements | null {
 // Comment Voting Functions
 // ============================================================================
 
-// Cache for comment ID lookup map (postId -> Map of lookup key -> commentId).
-const commentIdCache = new Map<string, Map<string, string>>();
-
-// Normalize content for matching DOM text to API content.
-function normalizeContent(s: string): string {
-  return s
-    .toLowerCase()
-    .replace(/[^a-z0-9]/g, "")
-    .slice(0, 40);
-}
-
-// Create a lookup key from author name and content snippet.
-function makeCommentLookupKey(authorName: string, contentSnippet: string): string {
-  return `${authorName.toLowerCase()}:${normalizeContent(contentSnippet)}`;
-}
-
-// Build a lookup map from all comments in an API response.
-function buildCommentLookupMap(comments: ApiComment[]): Map<string, string> {
-  const map = new Map<string, string>();
-
-  function addComments(commentList: ApiComment[]) {
-    for (const comment of commentList) {
-      const key = makeCommentLookupKey(comment.author.name, comment.content);
-      map.set(key, comment.id);
-
-      // Also add replies recursively.
-      if (comment.replies && comment.replies.length > 0) {
-        addComments(comment.replies);
-      }
-    }
-  }
-
-  addComments(comments);
-  return map;
-}
-
-// Fetch all comments for a post and build the lookup map.
-async function fetchCommentLookupMap(postId: string): Promise<Map<string, string>> {
-  // Check cache first.
-  if (commentIdCache.has(postId)) {
-    return commentIdCache.get(postId)!;
-  }
-
-  try {
-    // The /posts/{id} endpoint returns all comments with IDs.
-    const response = await fetch(`${API_BASE}/posts/${postId}`);
-    const data = await response.json();
-
-    if (data.success && data.comments) {
-      const map = buildCommentLookupMap(data.comments);
-      commentIdCache.set(postId, map);
-      console.log(`[Cercia] Built comment lookup map with ${map.size} entries`);
-      return map;
-    }
-  } catch (error) {
-    console.error("[Cercia] Failed to fetch post comments:", error);
-  }
-
-  // Return empty map on failure.
-  const emptyMap = new Map<string, string>();
-  commentIdCache.set(postId, emptyMap);
-  return emptyMap;
-}
-
-// Look up a comment ID - first try intercepted data, then fall back to API cache.
+// Look up a comment ID - first try intercepted data, then fall back to shared cache.
 function lookupCommentId(
   postId: string,
   authorName: string,
@@ -666,12 +597,8 @@ function lookupCommentId(
     return interceptedId;
   }
 
-  // Fall back to the API cache.
-  const map = commentIdCache.get(postId);
-  if (!map) return null;
-
-  const key = makeCommentLookupKey(authorName, contentSnippet);
-  return map.get(key) || null;
+  // Fall back to the shared comment lookup cache.
+  return cacheLookupCommentId(postId, authorName, contentSnippet);
 }
 
 // Simplified comment vote elements - ID is resolved on-demand.
@@ -1178,7 +1105,7 @@ async function handleNavigation() {
 
   // Clear state for fresh initialization.
   initializedPostIds.clear();
-  commentIdCache.clear();
+  clearCommentLookupCache();
   clearInterceptedData();
 
   // Wait for the page content to render.
