@@ -23,5 +23,14 @@ export default defineConfig({
         matches: ["*://*.moltbook.com/*"],
       },
     ],
+    browser_specific_settings: {
+      gecko: {
+        // @ts-expect-error -- WXT 0.20.13 types don't include this yet.
+        data_collection_permissions: {
+          required: ["authenticationInfo"],
+          optional: [],
+        },
+      },
+    },
   },
 });
